@@ -48,6 +48,7 @@ void printDevice(struct udev_device *dev, struct Data *data)
 
 	devpath = udev_device_get_devpath(dev);
 
+
 	if(has_usb(devpath)) {
 		tmp = udev_device_get_sysattr_value(dev, "size");
 
@@ -153,8 +154,7 @@ void monitorUSBDevices(struct Data *data)
 			const char* idProduct = udev_device_get_sysattr_value(dev, "idProduct");
 		
 			if (dev) {	
-
-			const char* product = udev_device_get_sysattr_value(dev, "iProduct");
+				const char* product = udev_device_get_sysattr_value(dev, "iProduct");
 			    	const char* action = udev_device_get_action(dev);
 
 				    if (!action)
@@ -167,9 +167,9 @@ void monitorUSBDevices(struct Data *data)
 					strcat(line, idVendor);
 					strcat(line, ":");
 					strcat(line, idProduct);
-					strcat(line, " -v | grep -E '\\<(iProduct)' 2> /dev/null | grep -v 'Couldn\'t open device, some information will be missing'");
+					
+					strcat(line, " -v 2> /dev/null | grep -E '\\<(iProduct)' 2> /dev/null");
 
-					printf("line: %s\n", line);
 					printf("Action: %s", action);
 
 					if(!strcmp(action, "add")) {
@@ -188,7 +188,20 @@ void monitorUSBDevices(struct Data *data)
 						pch = strtok(NULL, " ");
 
 						if((pch == NULL)) {
-							printf("This is fleshka.\n");
+							char line[300] = {"lsusb -d "};
+							FILE *fp;
+
+							strcat(line, idVendor);
+							strcat(line, ":");
+							strcat(line, idProduct);
+					
+							strcat(line, " -v 2> /dev/null | grep -E '\\<(idVendor)' 2> /dev/null");
+
+							printf("Action: %s", action);
+
+							if(!strcmp(action, "add")) {
+								printf("ed new device. ");
+							}
 							break;
 						} else {
 							do {
