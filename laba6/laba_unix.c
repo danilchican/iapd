@@ -58,22 +58,15 @@ void printDevice(struct udev_device *dev, struct Data *data)
 		if (tmp)
 			block_size = atoi(tmp);
 
-		//printf("I: DEVSIZE=");
-		if (strncmp(udev_device_get_sysname(dev), "sr", 2) != 0)
-			printf("%.1lf GB\n", (double)(disk_size * block_size)/ (1000 * 1000 * 1000));
-		else
-			printf("n/a\n\n");
-
 		FILE *fp;
 		char line[300] = {"df -H | grep "};
 
 		strcat(line,devnode);
 		fp = popen(line, "r"); 
 
-		while (fgets( line, sizeof line, fp)) {
-
+		while (fgets( line, sizeof line, fp)) 
 			printf("%s", line);
-		}
+		
 		printf("\n");
 
 		pclose(fp);
@@ -91,6 +84,24 @@ void processDevice(struct udev_device *dev, struct Data *data)
 
         udev_device_unref(dev);
     }
+}
+
+void enumeratePhoneDevices(struct Data *data)
+{
+	data->enumerate = udev_enumerate_new(data->udev);
+
+	udev_enumerate_add_match_subsystem(data->enumerate, SUBSYSTEM);
+	udev_enumerate_scan_devices(data->enumerate);
+
+	data->devices = udev_enumerate_get_list_entry(data->enumerate);
+	
+	udev_list_entry_foreach(data->entry, data->devices) {
+		const char* path = udev_list_entry_get_name(data->entry);
+		struct udev_device* dev = udev_device_new_from_syspath(data->udev, path);
+		processDevice(dev, data);
+	}
+
+	udev_enumerate_unref(data->enumerate);
 }
 
 void enumerateUSBDevices(struct Data *data)
@@ -138,13 +149,53 @@ void monitorUSBDevices(struct Data *data)
 	{
 		   	struct udev_device* dev = udev_monitor_receive_device(mon);
 
+			const char* idVendor = udev_device_get_sysattr_value(dev, "idVendor");
+			const char* idProduct = udev_device_get_sysattr_value(dev, "idProduct");
+			const char* product = udev_device_get_sysattr_value(dev, "iProduct");
+		
 			if (dev) {	
 			    	const char* action = udev_device_get_action(dev);
+
 				    if (!action)
 					action = "exists";
-			
-				printf("Action: %s\n", action);
+
+				if (idVendor) {
+					char line[300] = {"lsusb -d "};
+					FILE *fp;
+
+					strcat(line, idVendor);
+					strcat(line, ":");
+					strcat(line, idProduct);
+					strcat(line, " -v | grep -E '\\<(iProduct)' 2>/dev/null");
+
+					printf("Action: %s\n ", action);
+
+					fp = popen(line, "r"); 
+
+					while (fgets(line, sizeof line, fp)) {
+						char *command = (char *)malloc(strlen(line) + 1);
+						strcpy(command, line);
+
+						char *pch = strtok(command, " ");
+						printf("%s\n", pch);
+						pch = strtok(NULL, " ");
+						printf("%s\n", pch);
+						pch = strtok(NULL, " ");
+						printf("%s\n", pch);
+						if(pch == NULL) {
+							printf("This is fleshka.\n");
+							break;
+						}
+						
+						printf("%s", line);
+					}
 		
+					printf("\n");
+
+					pclose(fp);
+
+					
+				}
 				udev_device_unref(dev);
 			}
 		
@@ -166,6 +217,7 @@ void printUSBDevices(char *param, struct Data *data)
 	}
 
 	enumerateUSBDevices(data);
+	//enumeratePhoneDevices(data);
         monitorUSBDevices(data);
 }
 

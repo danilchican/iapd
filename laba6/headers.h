@@ -38,6 +38,7 @@ void closePrintProcess(struct Data *data);
 void printDevice(struct udev_device *dev, struct Data *data);
 void processDevice(struct udev_device *dev, struct Data *data);
 void enumerateUSBDevices(struct Data *data);
+void enumeratePhoneDevices(struct Data *data);
 
 void monitorUSBDevices(struct Data *data);
 void printUSBDevices(char *param, struct Data *data);
