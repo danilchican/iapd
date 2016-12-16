@@ -151,9 +151,10 @@ void monitorUSBDevices(struct Data *data)
 
 			const char* idVendor = udev_device_get_sysattr_value(dev, "idVendor");
 			const char* idProduct = udev_device_get_sysattr_value(dev, "idProduct");
-			const char* product = udev_device_get_sysattr_value(dev, "iProduct");
 		
 			if (dev) {	
+
+			const char* product = udev_device_get_sysattr_value(dev, "iProduct");
 			    	const char* action = udev_device_get_action(dev);
 
 				    if (!action)
@@ -166,28 +167,37 @@ void monitorUSBDevices(struct Data *data)
 					strcat(line, idVendor);
 					strcat(line, ":");
 					strcat(line, idProduct);
-					strcat(line, " -v | grep -E '\\<(iProduct)' 2>/dev/null");
+					strcat(line, " -v | grep -E '\\<(iProduct)' 2> /dev/null | grep -v 'Couldn\'t open device, some information will be missing'");
 
-					printf("Action: %s\n ", action);
+					printf("line: %s\n", line);
+					printf("Action: %s", action);
+
+					if(!strcmp(action, "add")) {
+						printf("ed new device. ");
+					}
 
 					fp = popen(line, "r"); 
 
 					while (fgets(line, sizeof line, fp)) {
 						char *command = (char *)malloc(strlen(line) + 1);
 						strcpy(command, line);
-
+						
 						char *pch = strtok(command, " ");
-						printf("%s\n", pch);
 						pch = strtok(NULL, " ");
-						printf("%s\n", pch);
 						pch = strtok(NULL, " ");
-						printf("%s\n", pch);
-						if(pch == NULL) {
+						pch = strtok(NULL, " ");
+
+						if((pch == NULL)) {
 							printf("This is fleshka.\n");
 							break;
+						} else {
+							do {
+								printf("%s ", pch);
+								pch = strtok(NULL, " ");
+							} while(pch != NULL);
+						printf("\n");
+							break;
 						}
-						
-						printf("%s", line);
 					}
 		
 					printf("\n");
